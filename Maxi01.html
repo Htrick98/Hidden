@@ -1,0 +1,258 @@
+<!doctype html>
+<html> 
+ <head> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script> 
+ <style type="text/css" id="dcoder_stylesheet">body {
+        background-color: #f2f2f2;
+        font-family: Arial, sans-serif;
+      }
+
+h1 {
+        text-align: center;
+        margin-top: 50px;
+        font-size: 30px;
+        color: #333;
+      }
+      
+.gradient-btn {
+    background: linear-gradient(to bottom, #ff7f50, #ff4b2b);
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+.text {
+        font-size: 20px;
+        margin: 50px;
+        text-align: center;
+        color: #666;
+      }</style></head> 
+ <body> 
+  <br> 
+  <br> 
+  <div align="center"> 
+   <h1 id="title"> Hello </h1> <button class="gradient-btn" onclick="magicWheel()">MagicWheel</button> <button class="gradient-btn" onclick="playGrid()">PlayGrid</button> 
+  </div> 
+ 
+<script type="text/javascript" id="dcoder_script">
+token="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJlYWE3YWNjYy1lYWJiLTQ1YTYtOWJkYS05OGMyYzM3ZTUzNjUiLCJkZXZpY2VJZCI6IjA5N2FlZTQzLTc1ZjItNGZjYi04ODNkLTk2OTVlMzFlMTBmNyIsImlhdCI6MTY4NjQyNzExNCwiZXhwIjoxNjg3NjM2NzE0fQ.gyuGKMTLqiX64si7OnReqSJc0wgwPJU-d40gSacyQPy9G5QwLSFH7CM4kjkb94CZIu5L9sgvUl9cugdTJurTssGYHCsvLrwRmE8wBbCnmuEpF6uVbEZ1i48O6ten1W1E3vJ-cJKXtArKSivU-LO4Oou4WJLcQDf4tO57_AJdrG1Hw4Dps9YR_JuBmCXJvewS7QzKjJJaZ9lzaYkVdFp0O2_z7L6UvuOBS14TtCMjE22L7vr9o-p9eHTAuVWOjcUiN-GGI0aEDbpniQOPDVLCWvmz-qKUXY-RDoAmEnlKdvDB8NJFQ5QAIQYh9l_9JldweR71MmwQJT0k0KGHHyiI1ggvfOWclxZS3a9O4GX6TiWI0RCp9QdWs9O7E3B8qvOM4xNES2UxVIpO0L4R8DtctXUw_FbC0oxy5X-Wbpd9mjd_l5o_2Y20gjz6rPU5zE02jSWnGxqiOMfUdI1kzEIHQG6Hnmi8_G9_Fdhri69cwS9XQJ9oApZRLvi3TmpfWeUbYfArwZUY_ZH-D8BCrwYYj76I3yXO-C6gqNYGiEsu2HPhk55ctWq-Mzew-yDIKLxO7ruV1oF7chyOCON3yLcq1GZ5OoOhU47ZQnkoEw0Hl7gpEpyR5LCpWbcw-eM27rU_vbw3GWuuOAmFw9z-TV2nevIHeUn2p5Qwuaoy9SGFciw"
+nextMagicWheel=new Date().getTime();
+
+// Connect to the server
+const socket = io('https://api.hiddenfortune.app',
+{
+  //transports: ["polling", "polling"],
+  //transports: ["polling", "websocket"],
+  extraHeaders: {
+    "Authorization": "Bearer "+token
+  }
+}
+);
+
+function mainApp(){
+  app = setInterval(function(){
+    now = new Date().getTime();
+    distance = nextMagicWheel - now;
+    if (distance > 0){
+      minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      
+      str=minutes + "m " + seconds + "s ";
+      str="NEXT SPIN IN " + minutes + ":" + seconds;
+      myDiv = document.getElementById("title");
+      myDiv.innerHTML = str;
+    } else {
+      clearInterval(app);
+      getProfile()
+      myDiv = document.getElementById("title");
+      //myDiv.innerHTML = "EXPIRED";
+    }
+  }, 1000);
+}
+
+function getProfile(){
+  socket.emit("get-profile", {}, 
+  (err, data) => {
+    if (data == "[object Object]"){
+      const now = new Date().getTime();
+      if (data.nextMagicWheel <= now){
+        requestMagicWheel()
+      } else {
+        nextMagicWheel=data.nextMagicWheel
+        mainApp()
+      }
+    }
+  });
+}
+
+function requestMagicWheel(){
+  socket.emit('request-magic-wheel-instance',
+  (err, data) => {
+    if (data == "[object Object]"){
+      playMagicWheel(data)
+    }
+  });
+}
+
+function playMagicWheel(_data){
+  socket.emit("play-magic-wheel",
+  {"magicWheelId": _data['magicWheelId']},
+  (err,data) => {
+    mainApp()
+  });
+}
+
+function playGrid() {
+  arr = Array.from({length: 5}, () => Math.floor(Math.random() * 20) + 1);
+  socket.emit("play-grid",
+  {"selectedIndexes":arr},
+  (err, data) => {
+    if (data == "[object Object]") {
+      socket.emit("collect-thieves",
+      {"gridId":data['gridId']});
+      
+      socket.emit("collect-grid",
+      {"gridId":data['gridId']});
+    }
+  });
+}
+
+mainApp()
+//magicWheel()
+function mainApp2() {
+var x = setInterval(function() {
+  var now = new Date().getTime();
+  var distance = nextMagicWheel - now;  
+  if (distance > 0) {
+
+    // Time calculations for days, hours, minutes and seconds
+    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    // Output the result in an element with id="demo"
+    console.log(minutes + "m " + seconds + "s ")
+    var str=minutes + "m " + seconds + "s ";
+    var myDiv = document.getElementById("title");
+    myDiv.innerHTML = str;
+  }else{
+    clearInterval(x);
+    //document.getElementById("demo").
+    console.log("EXPIRED")
+    var myDiv = document.getElementById("title");
+    myDiv.innerHTML = "EXPIRED";
+    magicWheel()
+  }
+}, 1000);
+}
+
+function playGrid22(){
+  var arr = Array.from({length: 5}, () => Math.floor(Math.random() * 20) + 1);
+  //console.log(arr);
+  socket.emit("play-grid",
+  {"selectedIndexes":arr}, (err, data) => {
+    if (err == "[object Object]"){
+      console.log("000")
+    }
+    if (data == "[object Object]"){
+      console.log(Object.keys(data))
+      socket.emit("collect-thieves",
+      {"gridId":data['gridId']});
+    }
+    
+  });
+}
+  
+
+function magicWheel(){
+  socket.emit("get-profile", {}, (err, data) => {
+    
+    if (data == "[object Object]"){
+      //console.log(Object.keys(data))
+      //console.log(data.nextMagicWheel)
+      const now = new Date().getTime();
+      //console.log(now);
+      if (data.nextMagicWheel <= now){
+        socket.emit('request-magic-wheel-instance',
+        (err, data) => {
+      if (err == "[object Object]"){
+        //console.log("Errrrrrr \n")
+        //console.log(err.status)
+        //console.log(err.statusCode)
+        //console.log(err.errorCode)
+        //console.log(Object.keys(err))
+        //socket.disconnect();
+        //var myDiv = document.getElementById("title");
+        //myDiv.innerHTML = err.errorCode;
+      }
+      
+      if (data == "[object Object]"){
+          console.log("magic-wheel-data")
+          socket.emit("play-magic-wheel", 
+          {"magicWheelId": data['magicWheelId']}, (err,data) => {
+            //console.log(Object.keys(data))
+            //console.log(data.success)
+          });
+          //var myDiv = document.getElementById("title");
+          //myDiv.innerHTML = data['magicWheelId'];
+          //console.log(Object.keys(data))
+          //socket.disconnect();
+        }
+        
+        });
+      }else{
+        const timestamp = data.nextMagicWheel;
+        const date = new Date(timestamp);
+        const h = date.getHours();
+        const m = date.getMinutes()
+        const s = date.getSeconds()
+        console.log(h+":"+m+":"+s)
+        //var myDiv = document.getElementById("title");
+        //myDiv.innerHTML = h+":"+m+":"+s;
+      }
+    }
+   nextMagicWheel=data.nextMagicWheel
+   mainApp2() 
+  });
+  
+}
+
+socket.on("connect", () => {
+  console.log("Start ...");
+  const engine = socket.io.engine;
+  console.log(engine.transport.name, "\n");
+  //magicWheel()
+  //socket.emit("play-grid", 
+  //        {"selectedIndexes":[1,2,3,4,5]});              
+  engine.once("upgrade", () => {
+    // called when the transport is upgraded 
+    //(i.e. from HTTP long-polling to WebSocket)
+    // in most cases, prints "websocket"
+    console.log(engine.transport.name, "\n"); 
+  });
+  
+  engine.on("packet", ({ type, data }) => {
+    // called for each packet received
+    console.log("packet received");
+    console.log("type:", type);
+    console.log("received:", data, "\n");
+  });
+
+  engine.on("packetCreate", ({ type, data }) => {
+    // called for each packet sent
+    //console.log("packetCreate");
+    //console.log("sent:", data, "\n");
+  });
+
+  engine.on("drain", () => {
+    // called when the write buffer is drained
+    //console.log("drain");
+  });
+
+  engine.on("close", (reason) => {
+    socket.connect();
+  });
+
+});</script></body></html>
